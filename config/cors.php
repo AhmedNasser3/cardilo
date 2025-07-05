@@ -7,6 +7,7 @@ return [
         'logout',
         'register',
         'categories',
+        'user',
         '*'
     ],
     'allowed_methods' => ['*'],
