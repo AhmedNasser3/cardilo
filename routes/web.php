@@ -8,22 +8,20 @@ use App\Http\Controllers\Admin\ReviewController;
 use App\Http\Controllers\API\CategoryController;
 use App\Http\Controllers\Admin\SeoMetaController;
 use App\Http\Controllers\Admin\DashboardController;
-use App\Http\Controllers\Auth\RegisteredUserController;
-
 /*
 |--------------------------------------------------------------------------
 | SPA Catch-all Route
 |--------------------------------------------------------------------------
-| أي طلب غير معروف يتم تحويله إلى view('app') لتعمل SPA React/Vue.
+| أي طلب غير معروف يتم تحويله إلى view('app') لتعمل SPA React/Vue
 */
 Route::get('/{any}', function () {
     return view('app');
 })->where('any', '.*');
-
 /*
 |--------------------------------------------------------------------------
 | Welcome Page
 |--------------------------------------------------------------------------
+| الصفحة الترحيبية الافتراضية
 */
 Route::get('/', function () {
     return view('welcome');
@@ -33,7 +31,7 @@ Route::get('/', function () {
 |--------------------------------------------------------------------------
 | Dashboard Routes
 |--------------------------------------------------------------------------
-| للوصول إلى لوحة التحكم بعد تسجيل الدخول والتفعيل.
+| للوصول إلى لوحة التحكم بعد تسجيل الدخول وتفعيل الحساب
 */
 Route::middleware([
     'auth:sanctum',
@@ -47,8 +45,17 @@ Route::middleware([
 
 /*
 |--------------------------------------------------------------------------
+| Admin Dashboard API
+|--------------------------------------------------------------------------
+| بيانات الاحصائيات في لوحة التحكم
+*/
+Route::get('/admin/dashboard', [DashboardController::class, 'index']);
+
+/*
+|--------------------------------------------------------------------------
 | Categories Routes
 |--------------------------------------------------------------------------
+| إدارة التصنيفات
 */
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::resource('categories', CategoryController::class);
@@ -58,6 +65,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 |--------------------------------------------------------------------------
 | Site Settings Routes
 |--------------------------------------------------------------------------
+| إعدادات الموقع
 */
 Route::get('/sitesettings', [BannerController::class, 'index']);
 
@@ -65,39 +73,40 @@ Route::get('/sitesettings', [BannerController::class, 'index']);
 |--------------------------------------------------------------------------
 | Blogs Routes
 |--------------------------------------------------------------------------
+| إدارة المقالات
 */
 Route::prefix('blogs')->group(function () {
-
-    // إرجاع الكل (مع ?with_deleted=1 لو عايزهم كلهم)
-    Route::get('/', [BlogController::class, 'index']);
-
-    // إنشاء blog
-    Route::post('/', [BlogController::class, 'store']);
-
-    // إرجاع blog واحد
-    Route::get('/{id}', [BlogController::class, 'show']);
-
-    // تحديث blog
-    Route::put('/{id}', [BlogController::class, 'update']);
-    Route::patch('/{id}', [BlogController::class, 'update']); // يدعم PATCH أيضًا
-
-    // حذف (soft أو force مع ?force=1)
-    Route::delete('/{id}', [BlogController::class, 'destroy']);
-
-    // استرجاع blog محذوف
-    Route::post('/{id}/restore', [BlogController::class, 'restore']);
+    Route::get('/', [BlogController::class, 'index']);         // كل المقالات
+    Route::post('/', [BlogController::class, 'store']);        // إنشاء مقالة
+    Route::get('/{id}', [BlogController::class, 'show']);      // مقالة واحدة
+    Route::put('/{id}', [BlogController::class, 'update']);    // تحديث مقالة
+    Route::patch('/{id}', [BlogController::class, 'update']);  // تحديث مقالة
+    Route::delete('/{id}', [BlogController::class, 'destroy']); // حذف (soft/force)
+    Route::post('/{id}/restore', [BlogController::class, 'restore']); // استرجاع
 });
 
-
+/*
+|--------------------------------------------------------------------------
+| SEO Meta Routes
+|--------------------------------------------------------------------------
+| إدارة بيانات SEO
+*/
 Route::get('seo-meta', [SeoMetaController::class, 'index']);
 
-
-
-
+/*
+|--------------------------------------------------------------------------
+| Users Routes
+|--------------------------------------------------------------------------
+| إدارة المستخدمين
+*/
 Route::prefix('users')->group(function () {
-    Route::get('/', [UserController::class, 'index']);
+    Route::get('/', [UserController::class, 'index']);         // كل المستخدمين
 });
 
-Route::get('reviews', [ReviewController::class, 'index']);           // جلب كل التقييمات
-
-Route::get('/admin/dashboard', [DashboardController::class, 'index']);
+/*
+|--------------------------------------------------------------------------
+| Reviews Routes
+|--------------------------------------------------------------------------
+| إدارة التقييمات
+*/
+Route::get('reviews', [ReviewController::class, 'index']);     // كل التقييمات
