@@ -1,14 +1,16 @@
 <?php
 
+use App\Http\Controllers\API\SubCategoryController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\BlogController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\ReviewController;
+use App\Http\Controllers\API\CategoryController;
 use App\Http\Controllers\Admin\SeoMetaController;
 use App\Http\Controllers\Admin\DashboardController;
-use App\Http\Controllers\API\CategoryController;
+use App\Http\Controllers\Api\NotificationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -24,10 +26,29 @@ Route::get('/user/account', [UserController::class, 'userAccount']);
 | Categories
 |--------------------------------------------------------------------------
 */
-Route::get('/category/all', [CategoryController::class, 'index']); // بدون auth
-Route::middleware('auth:sanctum')->apiResource('categories', CategoryController::class);
-
-
+Route::prefix('categories')->group(function () {
+    Route::get('/', [CategoryController::class, 'index'])->name('categories.index');
+    Route::get('/trashed', [CategoryController::class, 'trashed'])->name('categories.trashed');
+    Route::get('/{id}', [CategoryController::class, 'show'])->name('categories.show');
+    Route::post('/', [CategoryController::class, 'store'])->name('categories.store');
+    Route::put('/{id}', [CategoryController::class, 'update'])->name('categories.update');
+    Route::delete('/{id}', [CategoryController::class, 'destroy'])->name('categories.destroy');
+    Route::post('/{id}/restore', [CategoryController::class, 'restore'])->name('categories.restore');
+});
+/*
+|--------------------------------------------------------------------------
+| SubCategories
+|--------------------------------------------------------------------------
+*/
+Route::prefix('subcategories')->group(function () {
+    Route::get('/', [SubCategoryController::class, 'index'])->name('subcategories.index');
+    Route::get('/trashed', [SubCategoryController::class, 'trashed'])->name('subcategories.trashed');
+    Route::get('/{id}', [SubCategoryController::class, 'show'])->name('subcategories.show');
+    Route::post('/', [SubCategoryController::class, 'store'])->name('subcategories.store');
+    Route::put('/{id}', [SubCategoryController::class, 'update'])->name('subcategories.update');
+    Route::delete('/{id}', [SubCategoryController::class, 'destroy'])->name('subcategories.destroy');
+    Route::post('/{id}/restore', [SubCategoryController::class, 'restore'])->name('subcategories.restore');
+});
 /*
 |--------------------------------------------------------------------------
 | Users
@@ -110,3 +131,14 @@ Route::prefix('seo-meta')->group(function () {
 |--------------------------------------------------------------------------
 */
 Route::get('/admin/dashboard', [DashboardController::class, 'index']);
+
+
+/*
+|--------------------------------------------------------------------------
+| Notofication
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/notifications', [NotificationController::class, 'index']);
+Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);

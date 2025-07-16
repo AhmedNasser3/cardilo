@@ -2,52 +2,63 @@
 
 namespace App\Http\Controllers\API;
 
-use Illuminate\Http\Request;
-use App\Models\frontend\Category;
+use App\Models\Frontend\Category;
+use App\Services\CategoryService;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Cache;
+use App\Http\Resources\Api\CategoryResource;
+use App\Http\Requests\Api\StoreCategoryRequest;
 
 class CategoryController extends Controller
 {
+    public function __construct(protected CategoryService $service) {}
+
     public function index()
     {
-        return response()->json(Category::all());
+        $key = 'categories_' . md5(json_encode(request()->all()));
+        $categories = Cache::remember($key, 60, fn () => $this->service->listCategories());
+
+        return CategoryResource::collection($categories);
     }
 
-    public function store(Request $request)
+    public function store(StoreCategoryRequest $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-        ]);
+        $category = $this->service->createCategory($request->toDTO());
+        Cache::flush();
 
-        $category = Category::create($validated);
-
-        return response()->json($category, 201);
+        return new CategoryResource($category);
     }
 
-    public function show($id)
+    public function update(StoreCategoryRequest $request, $id)
     {
-        $category = Category::findOrFail($id);
-        return response()->json($category);
-    }
+        $category = $this->service->updateCategory($id, $request->toDTO());
+        Cache::flush();
 
-    public function update(Request $request, $id)
-    {
-        $category = Category::findOrFail($id);
-
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-        ]);
-
-        $category->update($validated);
-
-        return response()->json($category);
+        return new CategoryResource($category);
     }
 
     public function destroy($id)
     {
         $category = Category::findOrFail($id);
         $category->delete();
+        Cache::flush();
 
-        return response()->json(['message' => 'Deleted successfully']);
+        return response()->json(['message' => 'Category soft deleted']);
+    }
+
+    public function trashed()
+    {
+        $trashed = Category::onlyTrashed()->paginate(10);
+
+        return CategoryResource::collection($trashed);
+    }
+
+    public function restore($id)
+    {
+        $category = Category::withTrashed()->findOrFail($id);
+        $category->restore();
+        Cache::flush();
+
+        return response()->json(['message' => 'Category restored']);
     }
 }
