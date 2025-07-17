@@ -31,6 +31,7 @@ return new class extends Migration
             $table->decimal('price', 10, 2);
             $table->check('price >= 0');
             $table->integer('deadline');
+            $table->integer('set_order')->default(0);
 
             // status
             $table->enum('status', ['Active', 'preview', 'progressing', 'cancelled', 'closed']);
