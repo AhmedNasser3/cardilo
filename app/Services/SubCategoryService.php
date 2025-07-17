@@ -4,37 +4,65 @@ namespace App\Services;
 
 use App\DTOs\SubCategoryDTO;
 use App\Models\api\SubCategory;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class SubCategoryService
 {
-    public function listSubCategories(): LengthAwarePaginator
-    {
-        return SubCategory::query()
-            ->with(['user', 'category'])
-            ->when(request('is_active'), fn($q) =>
-                $q->where('is_active', request('is_active'))
-            )
-            ->when(request('search'), fn($q) =>
-                $q->where('name', 'like', '%' . request('search') . '%')
-            )
-            ->orderBy('set_order')
-            ->paginate(15);
-    }
 
-    public function createSubCategory(SubCategoryDTO $dto): SubCategory
+     public function getTrashed()
+    {
+        return SubCategory::onlyTrashed()
+            ->with(['category:id,name', 'user:id,name'])
+            ->orderBy('set_order')
+            ->get();
+    }
+    public function create(SubCategoryDTO $dto): SubCategory
     {
         $data = $this->prepareData($dto);
+
+        // 🔷 هنا نحول category_id إلى int (أو null)
+        $categoryId = $dto->category_id !== null ? (int) $dto->category_id : null;
+
+        // الحصول على آخر ترتيب
+        $data['set_order'] = $this->getNextOrder($categoryId);
+
         return SubCategory::create($data);
     }
 
-    public function updateSubCategory(string $id, SubCategoryDTO $dto): SubCategory
+    public function update(SubCategory $subCategory, SubCategoryDTO $dto): SubCategory
     {
-        $subCategory = SubCategory::findOrFail($id);
         $data = $this->prepareData($dto);
         $subCategory->update($data);
 
         return $subCategory;
+    }
+
+    public function delete(SubCategory $subCategory): void
+    {
+        $subCategory->delete();
+    }
+
+    public function restore(string $id): SubCategory
+    {
+        $subCategory = SubCategory::withTrashed()->findOrFail($id);
+        $subCategory->restore();
+
+        return $subCategory;
+    }
+
+    public function move(SubCategory $subCategory, string $direction): bool
+    {
+        $neighbor = SubCategory::where('category_id', $subCategory->category_id)
+            ->where('set_order', $direction === 'up' ? '<' : '>', $subCategory->set_order)
+            ->orderBy('set_order', $direction === 'up' ? 'desc' : 'asc')
+            ->first();
+
+        if (!$neighbor) return false;
+
+        [$subCategory->set_order, $neighbor->set_order] = [$neighbor->set_order, $subCategory->set_order];
+        $subCategory->save();
+        $neighbor->save();
+
+        return true;
     }
 
     protected function prepareData(SubCategoryDTO $dto): array
@@ -44,7 +72,6 @@ class SubCategoryService
             'slug'         => $dto->slug,
             'description'  => $dto->description,
             'metadata'     => $dto->metadata,
-            'set_order'    => $dto->set_order,
             'category_id'  => $dto->category_id,
             'user_id'      => $dto->user_id,
             'is_active'    => $dto->is_active,
@@ -57,5 +84,10 @@ class SubCategoryService
         }
 
         return $data;
+    }
+
+    protected function getNextOrder(?int $categoryId): int
+    {
+        return (SubCategory::where('category_id', $categoryId)->max('set_order') ?? 0) + 1;
     }
 }

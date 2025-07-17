@@ -41,14 +41,17 @@ Route::prefix('categories')->group(function () {
 |--------------------------------------------------------------------------
 */
 Route::prefix('subcategories')->group(function () {
-    Route::get('/', [SubCategoryController::class, 'index'])->name('subcategories.index');
-    Route::get('/trashed', [SubCategoryController::class, 'trashed'])->name('subcategories.trashed');
-    Route::get('/{id}', [SubCategoryController::class, 'show'])->name('subcategories.show');
-    Route::post('/', [SubCategoryController::class, 'store'])->name('subcategories.store');
-    Route::put('/{id}', [SubCategoryController::class, 'update'])->name('subcategories.update');
-    Route::delete('/{id}', [SubCategoryController::class, 'destroy'])->name('subcategories.destroy');
-    Route::post('/{id}/restore', [SubCategoryController::class, 'restore'])->name('subcategories.restore');
+    Route::get('/', [SubCategoryController::class, 'index']);
+    Route::get('/trashed', [SubCategoryController::class, 'trashed']);
+    Route::get('/{subCategory}', [SubCategoryController::class, 'show']);
+    Route::post('/', [SubCategoryController::class, 'store']);
+    Route::put('/{subCategory}', [SubCategoryController::class, 'update']);
+    Route::delete('/{subCategory}', [SubCategoryController::class, 'destroy']);
+    Route::post('/{subCategory}/restore', [SubCategoryController::class, 'restore']);
+    Route::post('/{subCategory}/move-up', [SubCategoryController::class, 'moveUp']);
+    Route::post('/{subCategory}/move-down', [SubCategoryController::class, 'moveDown']);
 });
+
 /*
 |--------------------------------------------------------------------------
 | Users

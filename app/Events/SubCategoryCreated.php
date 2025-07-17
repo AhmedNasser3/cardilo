@@ -10,13 +10,5 @@ class SubCategoryCreated
 {
     use Dispatchable, SerializesModels;
 
-    public SubCategory $subCategory;
-
-    /**
-     * Create a new event instance.
-     */
-    public function __construct(SubCategory $subCategory)
-    {
-        $this->subCategory = $subCategory;
-    }
+    public function __construct(public SubCategory $subCategory) {}
 }

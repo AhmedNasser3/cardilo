@@ -2,7 +2,6 @@
 
 namespace App\DTOs;
 
-use App\Models\api\SubCategory;
 use Illuminate\Http\UploadedFile;
 
 class SubCategoryDTO
@@ -21,31 +20,20 @@ class SubCategoryDTO
         public ?string $approved_at,
     ) {}
 
-    /**
-     * Create a SubCategory from the DTO.
-     *
-     * @return SubCategory
-     */
-    public function create(): SubCategory
+    public static function fromArray(array $validated): self
     {
-        $imagePath = null;
-
-        if ($this->image instanceof UploadedFile) {
-            $imagePath = $this->image->store('sub_categories', 'public');
-        }
-
-        return SubCategory::create([
-            'name'         => $this->name,
-            'slug'         => $this->slug,
-            'description'  => $this->description,
-            'metadata'     => $this->metadata,
-            'set_order'    => $this->set_order ?? 0,
-            'image'        => $imagePath,
-            'category_id'  => $this->category_id,
-            'user_id'      => $this->user_id,
-            'is_active'    => $this->is_active ?? true,
-            'publish_at'   => $this->publish_at,
-            'approved_at'  => $this->approved_at,
-        ]);
+        return new self(
+            name:        $validated['name'],
+            slug:        $validated['slug'] ?? null,
+            description: $validated['description'] ?? null,
+            metadata:    $validated['metadata'] ?? null,
+            set_order:   $validated['set_order'] ?? null,
+            image:       $validated['image'] ?? null,
+            category_id: $validated['category_id'] ?? null,
+            user_id:     $validated['user_id'] ?? null,
+            is_active:   $validated['is_active'] ?? true,
+            publish_at:  $validated['publish_at'] ?? null,
+            approved_at: $validated['approved_at'] ?? null,
+        );
     }
 }

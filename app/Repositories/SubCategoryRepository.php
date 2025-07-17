@@ -7,12 +7,6 @@ use Illuminate\Support\Facades\Cache;
 
 class SubCategoryRepository
 {
-    /**
-     * Get cached category for a given subcategory.
-     *
-     * @param SubCategory $subCategory
-     * @return \App\Models\Frontend\Category|null
-     */
     public function cachedCategory(SubCategory $subCategory)
     {
         return Cache::remember(

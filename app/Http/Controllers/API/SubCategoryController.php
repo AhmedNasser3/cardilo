@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Models\api\SubCategory;
-use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
-use App\Services\SubCategoryService;
-use Illuminate\Support\Facades\Cache;
-use App\Http\Resources\Api\SubCategoryResource;
 use App\Http\Requests\Api\StoreSubCategoryRequest;
+use App\Http\Resources\Api\SubCategoryResource;
+use App\Models\api\SubCategory;
+use App\Services\SubCategoryService;
+use App\DTOs\SubCategoryDTO;
+use Illuminate\Support\Facades\Cache;
 
 class SubCategoryController extends Controller
 {
@@ -16,67 +16,69 @@ class SubCategoryController extends Controller
 
     public function index()
     {
-        $key = 'sub_categories_' . md5(json_encode(request()->all()));
-        $subCategories = Cache::remember($key, 60, fn () => $this->service->listSubCategories());
+        $data = Cache::remember('sub_categories', 60, fn () =>
+            SubCategory::with(['category:id,name', 'user:id,name'])
+                ->orderBy('set_order')
+                ->get()
+        );
 
-        return SubCategoryResource::collection($subCategories);
+        return SubCategoryResource::collection($data);
+    }
+    public function trashed()
+    {
+        $trashed = $this->service->getTrashed();
+
+        return SubCategoryResource::collection($trashed);
     }
 
     public function store(StoreSubCategoryRequest $request)
     {
-        try {
-            $subCategory = $this->service->createSubCategory($request->toDTO());
-            Cache::flush();
-
-            return new SubCategoryResource($subCategory);
-
-        } catch (\Throwable $e) {
-            Log::error('Error creating subcategory: '.$e->getMessage(), [
-                'trace' => $e->getTraceAsString()
-            ]);
-            return response()->json([
-                'message' => 'Something went wrong',
-                'error'   => $e->getMessage(),
-            ], 500);
-        }
-    }
-
-    public function update(StoreSubCategoryRequest $request, $id)
-    {
-        $subCategory = $this->service->updateSubCategory($id, $request->toDTO());
+        $dto = SubCategoryDTO::fromArray($request->validated());
+        $subCategory = $this->service->create($dto);
         Cache::flush();
 
         return new SubCategoryResource($subCategory);
     }
 
-    public function destroy($id)
+    public function update(StoreSubCategoryRequest $request, SubCategory $subCategory)
     {
-        $subCategory = SubCategory::findOrFail($id);
-        $subCategory->delete();
+        $dto = SubCategoryDTO::fromArray($request->validated());
+        $subCategory = $this->service->update($subCategory, $dto);
+        Cache::flush();
+
+        return new SubCategoryResource($subCategory);
+    }
+
+    public function destroy(SubCategory $subCategory)
+    {
+        $this->service->delete($subCategory);
         Cache::flush();
 
         return response()->json(['message' => 'SubCategory soft deleted']);
     }
 
-    public function trashed()
-    {
-        $trashed = SubCategory::onlyTrashed()->paginate(10);
-
-        return SubCategoryResource::collection($trashed);
-    }
-
     public function restore($id)
     {
-        $subCategory = SubCategory::withTrashed()->findOrFail($id);
-        $subCategory->restore();
+        $this->service->restore($id);
         Cache::flush();
 
         return response()->json(['message' => 'SubCategory restored']);
     }
 
-    public function show($id)
+    public function moveUp(SubCategory $subCategory) { return $this->move($subCategory, 'up'); }
+    public function moveDown(SubCategory $subCategory) { return $this->move($subCategory, 'down'); }
+
+    protected function move(SubCategory $subCategory, string $direction)
     {
-        $subCategory = SubCategory::findOrFail($id);
+        $result = $this->service->move($subCategory, $direction);
+        if (!$result) return response()->json(['message' => 'Cannot move further'], 400);
+
+        Cache::flush();
+        return response()->json(['message' => 'Order updated']);
+    }
+
+    public function show(SubCategory $subCategory)
+    {
         return new SubCategoryResource($subCategory);
     }
 }
