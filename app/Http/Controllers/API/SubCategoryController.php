@@ -22,25 +22,24 @@ class SubCategoryController extends Controller
         return SubCategoryResource::collection($subCategories);
     }
 
-public function store(StoreSubCategoryRequest $request)
-{
-    try {
-        $subCategory = $this->service->createSubCategory($request->toDTO());
-        Cache::flush();
+    public function store(StoreSubCategoryRequest $request)
+    {
+        try {
+            $subCategory = $this->service->createSubCategory($request->toDTO());
+            Cache::flush();
 
-        return new SubCategoryResource($subCategory);
+            return new SubCategoryResource($subCategory);
 
-    } catch (\Throwable $e) {
-        Log::error('Error creating subcategory: '.$e->getMessage(), [
-            'trace' => $e->getTraceAsString()
-        ]);
-        return response()->json([
-            'message' => 'Something went wrong',
-            'error'   => $e->getMessage(),
-        ], 500);
+        } catch (\Throwable $e) {
+            Log::error('Error creating subcategory: '.$e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'message' => 'Something went wrong',
+                'error'   => $e->getMessage(),
+            ], 500);
+        }
     }
-}
-
 
     public function update(StoreSubCategoryRequest $request, $id)
     {
@@ -73,5 +72,11 @@ public function store(StoreSubCategoryRequest $request)
         Cache::flush();
 
         return response()->json(['message' => 'SubCategory restored']);
+    }
+
+    public function show($id)
+    {
+        $subCategory = SubCategory::findOrFail($id);
+        return new SubCategoryResource($subCategory);
     }
 }
